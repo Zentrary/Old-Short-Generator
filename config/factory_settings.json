@@ -12,7 +12,7 @@
     "resolution": "1080x1920",
     "fps": 30,
     "font": "NotoSansThai-Black.ttf",
-    "volume": 0.4,
+    "volume": 0.32,
     "filter": "Darken (Cinematic)",
     "progress_bar": true,
     "fade_in": true,
@@ -22,11 +22,11 @@
     "backdrop_opacity": 0.55
   },
   "tts": {
-    "enabled": false,
+    "enabled": true,
     "voice": "th-TH-NiwatNeural",
     "rate": "+0%",
     "volume": "+0%",
-    "offline_fallback": "music_only"
+    "offline_fallback": "auto"
   },
   "ai": {
     "provider": "groq",

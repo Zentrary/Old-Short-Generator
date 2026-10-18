@@ -32,10 +32,25 @@ sys.path.insert(0, ".")
 from factory.config import get_factory_settings, get_knowledge, get_settings, get_groq_key, get_pexels_key, get_pixabay_key
 from factory.knowledge import pick_topic, get_pillar_for_today, load_knowledge, load_history, mark_topic_used, get_pillar_info
 from factory.script_engine import write_script, estimate_duration
-from factory.tts_engine import generate_tts
-from factory.media_engine import ensure_assets_for_pillar, pick_background_video, get_music_for_pillar
+# ใช้ TTS v2 ที่รองรับ fallback หลายแบบ
+try:
+    from factory.tts_engine_v2 import generate_tts
+    print("[Factory] Using TTS v2 (edge + gTTS + pyttsx3 + silent fallback)")
+except:
+    from factory.tts_engine import generate_tts
+from factory.media_engine import ensure_assets_for_pillar, pick_background_video
+try:
+    from factory.music_engine import get_music_for_pillar as get_music_for_pillar_v2
+    get_music_for_pillar = get_music_for_pillar_v2
+except:
+    pass
 from factory.metadata_engine import build_all_metadata
-from factory.renderer import KnowledgeRenderer
+# ใช้ Renderer V2 ที่แก้ฟอนต์ไทยแล้ว
+try:
+    from factory.renderer_v2 import KnowledgeRendererV2 as KnowledgeRenderer
+    print("[Factory] Using Renderer V2 (fixed Thai font & layout)")
+except:
+    from factory.renderer import KnowledgeRenderer
 from factory.scheduler import generate_schedule, load_schedule
 from factory.uploader import auto_upload, save_upload_log
 
@@ -134,6 +149,7 @@ def produce_one(topic=None, pillar=None, output_dir="outputs/knowledge", dry_run
     # 4. TTS
     tts_enabled = factory_settings.get("tts", {}).get("enabled", True)
     tts_voice = factory_settings.get("tts", {}).get("voice", "th-TH-NiwatNeural")
+    factory_duration = factory_settings.get("video", {}).get("duration", 60)
     audio_path = None
     audio_duration = None
     
@@ -141,15 +157,42 @@ def produce_one(topic=None, pillar=None, output_dir="outputs/knowledge", dry_run
         log(f"🔊 พากย์เสียง {tts_voice}...", YELLOW)
         audio_path = os.path.join(output_dir, f"tts_{timestamp}.mp3")
         ok, dur = generate_tts(script["full_script"], audio_path, voice=tts_voice)
-        if ok:
+        if ok and dur:
+            # ถ้าเป็น silent fallback จะได้ duration เกิน factory มาก ให้ cap ไว้
+            # ถ้า TTS จริง (edge-tts) จะได้ duration ประมาณ 50-60 วิ ซึ่งโอเค
+            if dur > factory_duration + 10:
+                # น่าจะเป็น silent estimate ที่ยาวเกิน ให้ใช้ factory duration แทน
+                log(f"   ℹ️ TTS duration {dur:.0f}วิ เกิน {factory_duration}วิ -> ใช้ music only {factory_duration}วิ", YELLOW)
+                audio_duration = None
+                # ลบไฟล์ silent ที่ยาวเกิน (จะใช้ music only)
+                try:
+                    if os.path.exists(audio_path):
+                        os.remove(audio_path)
+                        print(f"[Factory] Removed oversize TTS file")
+                    audio_path = None
+                except Exception as e:
+                    print(f"Remove error: {e}")
+                    audio_path = None
+            else:
+                audio_duration = dur
+                log(f"   ✅ เสียง {dur:.1f}วิ", GREEN)
+                # ปรับ duration ตามเสียงจริงเฉพาะเมื่อเป็น TTS จริงและไม่เกิน 62
+                if dur and factory_duration >= 30:
+                    factory_settings["video"]["duration"] = int(min(62, max(45, dur + 2)))
+        elif ok:
+            log(f"   ✅ เสียงเสร็จ (ไม่ทราบระยะ)", GREEN)
             audio_duration = dur
-            log(f"   ✅ เสียง {dur:.1f}วิ" if dur else "   ✅ เสียงเสร็จ", GREEN)
-            # ตรวจความยาวแล้วปรับ duration
-            if dur:
-                factory_settings["video"]["duration"] = int(min(62, max(45, dur + 2)))
         else:
-            log(f"   ⚠️ TTS ล้มเหลว จะใช้แค่เพลงพื้นหลัง", YELLOW)
+            log(f"   ⚠️ TTS ล้มเหลว (dur={dur}) จะใช้แค่เพลงพื้นหลัง", YELLOW)
+            if dur and dur > factory_duration + 10:
+                log(f"   ℹ️ จะใช้ music only {factory_duration}วิ", YELLOW)
             audio_path = None
+            # ลบไฟล์ที่อาจเป็น 0 byte
+            try:
+                if audio_path and os.path.exists(audio_path) and os.path.getsize(audio_path) < 1000:
+                    os.remove(audio_path)
+            except:
+                pass
     else:
         log(f"🔇 TTS ปิด จะใช้แค่เพลง", YELLOW)
     
