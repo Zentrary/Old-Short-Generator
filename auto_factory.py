@@ -31,10 +31,12 @@ sys.path.insert(0, ".")
 
 from factory.config import get_factory_settings, get_knowledge, get_settings, get_groq_key, get_pexels_key, get_pixabay_key
 from factory.knowledge import pick_topic, get_pillar_for_today, load_knowledge, load_history, mark_topic_used, get_pillar_info
-from factory.script_engine import write_script, estimate_duration
-# ใช้ TTS v2 ที่รองรับ fallback หลายแบบ
+from factory.script_engine_v2 import write_script_v2 as write_script, estimate_duration
+from factory.script_engine import estimate_duration as estimate_old
+# ใช้ Human TTS มีอารมณ์
 try:
-    from factory.tts_engine_v2 import generate_tts
+    from factory.human_tts import generate_best_voice as generate_tts_wrapper
+    from factory.tts_engine_v2 import generate_tts as tts_fallback
     print("[Factory] Using TTS v2 (edge + gTTS + pyttsx3 + silent fallback)")
 except:
     from factory.tts_engine import generate_tts
@@ -156,7 +158,13 @@ def produce_one(topic=None, pillar=None, output_dir="outputs/knowledge", dry_run
     if tts_enabled:
         log(f"🔊 พากย์เสียง {tts_voice}...", YELLOW)
         audio_path = os.path.join(output_dir, f"tts_{timestamp}.mp3")
-        ok, dur = generate_tts(script["full_script"], audio_path, voice=tts_voice)
+        # ใช้ Human TTS มีอารมณ์ (SSML)
+        try:
+            ok, dur = generate_tts_wrapper(script, audio_path, voice=tts_voice)
+            if not ok:
+                ok, dur = tts_fallback(script["full_script"], audio_path, voice=tts_voice)
+        except NameError:
+            ok, dur = tts_fallback(script["full_script"], audio_path, voice=tts_voice)
         if ok and dur:
             # ถ้าเป็น silent fallback จะได้ duration เกิน factory มาก ให้ cap ไว้
             # ถ้า TTS จริง (edge-tts) จะได้ duration ประมาณ 50-60 วิ ซึ่งโอเค
