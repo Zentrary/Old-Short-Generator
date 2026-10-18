@@ -1,0 +1,63 @@
+{
+  "factory_name": "รู้หรือไม่ใน 1 นาที - Auto Factory",
+  "mode": "full_auto",
+  "channel": {
+    "youtube_channel": "@RuMaiNai1Nathi",
+    "tiktok_channel": "@rumai1nathi",
+    "ig_channel": "@rumai1nathi",
+    "branding_text": "รู้หรือไม่? 1นาทีรู้เรื่อง"
+  },
+  "video": {
+    "duration": 60,
+    "resolution": "1080x1920",
+    "fps": 30,
+    "font": "NotoSansThai-Black.ttf",
+    "volume": 0.4,
+    "filter": "Darken (Cinematic)",
+    "progress_bar": true,
+    "fade_in": true,
+    "fade_out": true,
+    "dynamic_zoom": false,
+    "text_backdrop": true,
+    "backdrop_opacity": 0.55
+  },
+  "tts": {
+    "enabled": false,
+    "voice": "th-TH-NiwatNeural",
+    "rate": "+0%",
+    "volume": "+0%",
+    "offline_fallback": "music_only"
+  },
+  "ai": {
+    "provider": "groq",
+    "model": "llama-3.3-70b-versatile",
+    "temperature": 0.8
+  },
+  "generation": {
+    "batch_size": 3,
+    "daily_target": 2,
+    "auto_schedule": true,
+    "schedule_times": [
+      "07:30",
+      "19:30"
+    ],
+    "auto_upload": false,
+    "auto_download_assets": true
+  },
+  "upload": {
+    "youtube": {
+      "enabled": false,
+      "privacy": "public",
+      "category": "27",
+      "made_for_kids": false
+    },
+    "tiktok": {
+      "enabled": false
+    }
+  },
+  "paths": {
+    "outputs": "outputs/knowledge",
+    "thumbnails": "outputs/thumbnails",
+    "logs": "outputs/logs"
+  }
+}

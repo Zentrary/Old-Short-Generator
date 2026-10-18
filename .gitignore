@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+chrome_data/
+outputs/knowledge/*.mp4
+outputs/logs/history.json
+outputs/thumbnails/
+.vscode/
+.DS_Store
+*TEMP_MPY*
+tts_*.mp3

@@ -1,0 +1,17 @@
+# Factory requirements (เพิ่มจากของเดิม)
+groq
+edge_tts
+moviepy
+pillow
+requests
+cloudscraper
+pygame
+customtkinter
+selenium
+webdriver-manager
+beautifulsoup4
+imageio
+numpy
+# สำหรับอัพโหลด YouTube (optional)
+# google-api-python-client
+# google-auth
